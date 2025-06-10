@@ -1,0 +1,17 @@
+{
+	"name": "trigger1",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/triinput/blobs/",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/60f1ed83-e2eb-40fa-a46c-f52350aa73f1/resourceGroups/samarthresourcegrp1/providers/Microsoft.Storage/storageAccounts/blobstrpract1",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}

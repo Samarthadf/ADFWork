@@ -1,0 +1,49 @@
+{
+	"name": "DS_Target",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Ls_Blob",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "SCD_Opcontainer2.csv",
+				"container": "outputscd"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "User_ID",
+				"type": "String"
+			},
+			{
+				"name": "Subscripton",
+				"type": "String"
+			},
+			{
+				"name": "Price",
+				"type": "String"
+			},
+			{
+				"name": "Location",
+				"type": "String"
+			},
+			{
+				"name": "Pincode",
+				"type": "String"
+			},
+			{
+				"name": "Is_Active",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
