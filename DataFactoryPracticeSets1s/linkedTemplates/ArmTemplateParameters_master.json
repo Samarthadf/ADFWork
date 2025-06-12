@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "DataFactoryPracticeSets1s"
+		},
+		"AzureSqlDatabase1_password": {
+			"value": ""
+		},
+		"Ls_Blob_connectionString": {
+			"value": ""
+		},
+		"ls_adlsg2_accountKey": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"value": "server1ser.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"value": "Pract"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"value": "samkoli"
+		},
+		"ls_adlsg2_properties_typeProperties_url": {
+			"value": "https://adlsstoragepr1ac.dfs.core.windows.net/"
+		},
+		"event based_properties_typeProperties_scope": {
+			"value": "/subscriptions/60f1ed83-e2eb-40fa-a46c-f52350aa73f1/resourceGroups/samarthresourcegrp1/providers/Microsoft.Storage/storageAccounts/blobstrpract1"
+		},
+		"trigger1_properties_typeProperties_scope": {
+			"value": "/subscriptions/60f1ed83-e2eb-40fa-a46c-f52350aa73f1/resourceGroups/samarthresourcegrp1/providers/Microsoft.Storage/storageAccounts/blobstrpract1"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
