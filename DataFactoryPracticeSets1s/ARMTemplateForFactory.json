@@ -1219,8 +1219,8 @@
 						"     validateSchema: false,",
 						"     isolationLevel: 'READ_UNCOMMITTED',",
 						"     format: 'table') ~> source2",
-						"source1 derive({Hash input} = md5((id),name,dept,startdate)) ~> HashInput",
-						"source2 derive({Hash output} = md5((id),name,dept,start_date)) ~> HashOutput",
+						"source1 derive({Hash input} = md5(id,name,dept,startdate)) ~> HashInput",
+						"source2 derive({Hash output} = md5(id,name,dept,start_date)) ~> HashOutput",
 						"HashInput, HashOutput exists({Hash input} == {Hash output},",
 						"     negate:true,",
 						"     broadcast: 'auto')~> exists1",
@@ -1280,6 +1280,176 @@
 						"          start_date = startdate,",
 						"          end_date = enddate",
 						"     )) ~> sink1",
+						"alterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_scd_employee')]",
+				"[concat(variables('factoryId'), '/datasets/ds_sink_scd_employee')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "source2"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "inputhash"
+						},
+						{
+							"name": "outputhash"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "exists2"
+						},
+						{
+							"name": "derivedColumn2"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "select2"
+						},
+						{
+							"name": "alterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          id as string,",
+						"          name as string,",
+						"          dept as string,",
+						"          startdate as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source(output(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source2",
+						"source1 derive(inputhash = md5(name,dept)) ~> inputhash",
+						"source2 derive(outputhash = md5(name,dept)) ~> outputhash",
+						"inputhash, outputhash exists(inputhash == outputhash,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 derive(isactve = 1,",
+						"          startdate = toDate(startdate,'dd-MM-yyyy'),",
+						"          end_date = 9999) ~> derivedColumn1",
+						"outputhash, inputhash exists(source2@id == toInteger(source1@id)",
+						"     && source2@name == source1@name",
+						"     && source2@dept == source1@dept,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> exists2",
+						"exists2 derive(isactive = 0,",
+						"          end_date = toDate(currentUTC())) ~> derivedColumn2",
+						"derivedColumn1 select(mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          startdate,",
+						"          isactve,",
+						"          end_date",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"derivedColumn2 select(mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive,",
+						"          start_date,",
+						"          end_date",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
+						"select2 alterRow(updateIf(true())) ~> alterRow1",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink1",
 						"alterRow1 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     input(",
