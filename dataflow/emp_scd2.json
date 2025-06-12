@@ -1,0 +1,170 @@
+{
+	"name": "emp_scd2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_scd_employee",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_sink_scd_employee",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_sink_scd_employee",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_sink_scd_employee",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "HashInput"
+				},
+				{
+					"name": "HashOutput"
+				},
+				{
+					"name": "exists1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "exists2"
+				},
+				{
+					"name": "enddate"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id as string,",
+				"          name as string,",
+				"          dept as string,",
+				"          startdate as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> source1",
+				"source(output(",
+				"          id as integer,",
+				"          name as string,",
+				"          dept as string,",
+				"          isactive as integer,",
+				"          start_date as date,",
+				"          end_date as date",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source2",
+				"source1 derive(Hash = md5((id),name)) ~> HashInput",
+				"source2 derive(Hash = md5((id),name)) ~> HashOutput",
+				"HashInput, HashOutput exists(HashInput@Hash == HashOutput@Hash,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 derive(isactive = 1,",
+				"          enddate = toDate(9999-12-31),",
+				"          startdate = toDate(startdate,'dd-MM-yyyy')) ~> derivedColumn1",
+				"derivedColumn1 select(mapColumn(",
+				"          id,",
+				"          name,",
+				"          dept,",
+				"          startdate,",
+				"          isactive,",
+				"          enddate",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"HashOutput, HashInput exists(HashOutput@Hash == HashInput@Hash,",
+				"     negate:false,",
+				"     broadcast: 'auto')~> exists2",
+				"exists2 derive(end_date = toDate(currentUTC()),",
+				"          isactive = 0) ~> enddate",
+				"enddate select(mapColumn(",
+				"          id,",
+				"          name,",
+				"          dept,",
+				"          isactive,",
+				"          start_date,",
+				"          end_date",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select2 alterRow(updateIf(true())) ~> alterRow1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id as integer,",
+				"          name as string,",
+				"          dept as string,",
+				"          isactive as integer,",
+				"          start_date as date,",
+				"          end_date as date",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          id,",
+				"          name,",
+				"          dept,",
+				"          isactive,",
+				"          start_date = startdate,",
+				"          end_date = enddate",
+				"     )) ~> sink1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id as integer,",
+				"          name as string,",
+				"          dept as string,",
+				"          isactive as integer,",
+				"          start_date as date,",
+				"          end_date as date",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
+			]
+		}
+	}
+}
