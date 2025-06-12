@@ -62,9 +62,6 @@
 				},
 				{
 					"name": "alterRow1"
-				},
-				{
-					"name": "exists3"
 				}
 			],
 			"scriptLines": [
@@ -97,12 +94,11 @@
 				"exists1 derive(isactve = 1,",
 				"          startdate = toDate(startdate,'dd-MM-yyyy'),",
 				"          end_date = 9999) ~> derivedColumn1",
-				"outputhash, inputhash exists(source2@id == toInteger(source1@id)",
-				"     && source2@name == source1@name",
-				"     && source2@dept == source1@dept,",
+				"outputhash, inputhash exists(source2@name == source1@name",
+				"     && source2@id == toInteger(source1@id),",
 				"     negate:false,",
 				"     broadcast: 'auto')~> exists2",
-				"exists3 derive(isactive = 0,",
+				"exists2 derive(isactive = 0,",
 				"          end_date = toDate(currentUTC())) ~> derivedColumn2",
 				"derivedColumn1 select(mapColumn(",
 				"          id,",
@@ -125,9 +121,6 @@
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select2",
 				"select2 alterRow(updateIf(true())) ~> alterRow1",
-				"exists2, inputhash exists(outputhash == inputhash,",
-				"     negate:true,",
-				"     broadcast: 'auto')~> exists3",
 				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
