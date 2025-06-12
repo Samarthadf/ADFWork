@@ -146,7 +146,8 @@
 				"          isactive = isactve,",
 				"          start_date = startdate,",
 				"          end_date",
-				"     )) ~> sink1",
+				"     ),",
+				"     partitionBy('hash', 1)) ~> sink1",
 				"alterRow1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
@@ -172,7 +173,8 @@
 				"          isactive,",
 				"          start_date,",
 				"          end_date",
-				"     )) ~> sink2"
+				"     ),",
+				"     partitionBy('hash', 1)) ~> sink2"
 			]
 		}
 	}
