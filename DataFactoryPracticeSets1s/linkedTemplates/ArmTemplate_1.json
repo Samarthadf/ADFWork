@@ -17,7 +17,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"name": "[concat(parameters('factoryName'), '/emp_scd2')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -57,10 +57,10 @@
 					],
 					"transformations": [
 						{
-							"name": "inputhash"
+							"name": "HashInput"
 						},
 						{
-							"name": "outputhash"
+							"name": "HashOutput"
 						},
 						{
 							"name": "exists1"
@@ -69,13 +69,13 @@
 							"name": "derivedColumn1"
 						},
 						{
+							"name": "select1"
+						},
+						{
 							"name": "exists2"
 						},
 						{
-							"name": "derivedColumn2"
-						},
-						{
-							"name": "select1"
+							"name": "enddate"
 						},
 						{
 							"name": "select2"
@@ -106,32 +106,31 @@
 						"     validateSchema: false,",
 						"     isolationLevel: 'READ_UNCOMMITTED',",
 						"     format: 'table') ~> source2",
-						"source1 derive(inputhash = md5(name,dept)) ~> inputhash",
-						"source2 derive(outputhash = md5(name,dept)) ~> outputhash",
-						"inputhash, outputhash exists(inputhash == outputhash,",
+						"source1 derive({Hash input} = md5(id,name,dept,startdate)) ~> HashInput",
+						"source2 derive({Hash output} = md5(id,name,dept,start_date)) ~> HashOutput",
+						"HashInput, HashOutput exists({Hash input} == {Hash output},",
 						"     negate:true,",
 						"     broadcast: 'auto')~> exists1",
-						"exists1 derive(isactve = 1,",
-						"          startdate = toDate(startdate,'dd-MM-yyyy'),",
-						"          end_date = 9999) ~> derivedColumn1",
-						"outputhash, inputhash exists(source2@id == toInteger(source1@id)",
-						"     && source2@name == source1@name",
-						"     && source2@dept == source1@dept,",
-						"     negate:false,",
-						"     broadcast: 'auto')~> exists2",
-						"exists2 derive(isactive = 0,",
-						"          end_date = toDate(currentUTC())) ~> derivedColumn2",
+						"exists1 derive(isactive = 1,",
+						"          enddate = toDate(9999-12-31),",
+						"          startdate = toDate(startdate,'dd-MM-yyyy')) ~> derivedColumn1",
 						"derivedColumn1 select(mapColumn(",
 						"          id,",
 						"          name,",
 						"          dept,",
 						"          startdate,",
-						"          isactve,",
-						"          end_date",
+						"          isactive,",
+						"          enddate",
 						"     ),",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true) ~> select1",
-						"derivedColumn2 select(mapColumn(",
+						"HashOutput, HashInput exists(source2@id == toInteger((source1@id))",
+						"     && source2@name == source1@name,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> exists2",
+						"exists2 derive(end_date = toDate(currentUTC()),",
+						"          isactive = 0) ~> enddate",
+						"enddate select(mapColumn(",
 						"          id,",
 						"          name,",
 						"          dept,",
@@ -159,7 +158,15 @@
 						"     format: 'table',",
 						"     skipDuplicateMapInputs: true,",
 						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> sink1",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive,",
+						"          start_date = startdate,",
+						"          end_date = enddate",
+						"     )) ~> sink1",
 						"alterRow1 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     input(",
@@ -274,7 +281,9 @@
 				},
 				"annotations": []
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/emp_scd2')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/event based')]",
