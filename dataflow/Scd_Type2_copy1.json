@@ -1,0 +1,165 @@
+{
+	"name": "Scd_Type2_copy1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_Source",
+						"type": "DatasetReference"
+					},
+					"name": "SCDsource"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_Amazon_Table",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_Amazon_Table",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_Amazon_Table",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "SourceHash"
+				},
+				{
+					"name": "TargetHash"
+				},
+				{
+					"name": "exists1"
+				},
+				{
+					"name": "Isactive"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "exists2"
+				},
+				{
+					"name": "exists3"
+				},
+				{
+					"name": "isinactive"
+				},
+				{
+					"name": "alterRow1"
+				},
+				{
+					"name": "select2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          User_ID as string,",
+				"          Subscripton as string,",
+				"          Price as string,",
+				"          Location as string,",
+				"          Pincode as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SCDsource",
+				"source(output(",
+				"          User_ID as integer,",
+				"          Subscripton as string,",
+				"          Price as integer,",
+				"          Location as string,",
+				"          Pincode as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source1",
+				"SCDsource derive(Hash = md5(User_ID,Subscripton,Price,Location,Pincode)) ~> SourceHash",
+				"source1 derive(Hash = md5(User_ID,Subscripton,Price,Location,Pincode)) ~> TargetHash",
+				"SourceHash, TargetHash exists(SourceHash@Hash == TargetHash@Hash,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 derive(Is_active = 1) ~> Isactive",
+				"Isactive select(mapColumn(",
+				"          User_ID,",
+				"          Subscripton,",
+				"          Price,",
+				"          Location,",
+				"          Pincode,",
+				"          Is_active",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"TargetHash, SourceHash exists(source1@User_ID == SCDsource@User_ID,",
+				"     negate:false,",
+				"     broadcast: 'auto')~> exists2",
+				"exists2, SourceHash exists(TargetHash@Hash == SourceHash@Hash,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists3",
+				"exists3 derive(Is_Active = 0) ~> isinactive",
+				"isinactive alterRow(updateIf(true())) ~> alterRow1",
+				"alterRow1 select(mapColumn(",
+				"          User_ID,",
+				"          Subscripton,",
+				"          Price,",
+				"          Location,",
+				"          Pincode,",
+				"          Is_Active",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          User_ID as integer,",
+				"          Subscripton as string,",
+				"          Price as integer,",
+				"          Location as string,",
+				"          Pincode as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     partitionBy('hash', 1)) ~> sink1",
+				"select2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          User_ID as integer,",
+				"          Subscripton as string,",
+				"          Price as integer,",
+				"          Location as string,",
+				"          Pincode as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     partitionBy('hash', 1)) ~> sink2"
+			]
+		}
+	}
+}

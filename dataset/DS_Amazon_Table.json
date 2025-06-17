@@ -1,0 +1,40 @@
+{
+	"name": "DS_Amazon_Table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "User_ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Subscripton",
+				"type": "varchar"
+			},
+			{
+				"name": "Price",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Location",
+				"type": "varchar"
+			},
+			{
+				"name": "Pincode",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Amazon"
+		}
+	}
+}
