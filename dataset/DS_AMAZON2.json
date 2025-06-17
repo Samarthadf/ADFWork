@@ -1,8 +1,8 @@
 {
-	"name": "DS_Amazon_Table",
+	"name": "DS_AMAZON2",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "AzureSqlDatabase1",
+			"referenceName": "LS_AMAZON",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
