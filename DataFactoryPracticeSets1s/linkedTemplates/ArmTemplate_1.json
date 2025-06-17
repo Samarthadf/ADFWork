@@ -17,176 +17,68 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/emp_scd2')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
+			"name": "[concat(parameters('factoryName'), '/triggers_demo')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ds_scd_employee",
-								"type": "DatasetReference"
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
 							},
-							"name": "source1"
-						},
-						{
-							"dataset": {
-								"referenceName": "ds_sink_scd_employee",
-								"type": "DatasetReference"
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
 							},
-							"name": "source2"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "ds_sink_scd_employee",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
+							"enableStaging": false
 						},
-						{
-							"dataset": {
-								"referenceName": "ds_sink_scd_employee",
-								"type": "DatasetReference"
-							},
-							"name": "sink2"
-						}
-					],
-					"transformations": [
-						{
-							"name": "HashInput"
-						},
-						{
-							"name": "HashOutput"
-						},
-						{
-							"name": "exists1"
-						},
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "select1"
-						},
-						{
-							"name": "exists2"
-						},
-						{
-							"name": "enddate"
-						},
-						{
-							"name": "select2"
-						},
-						{
-							"name": "alterRow1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          id as string,",
-						"          name as string,",
-						"          dept as string,",
-						"          startdate as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> source1",
-						"source(output(",
-						"          id as integer,",
-						"          name as string,",
-						"          dept as string,",
-						"          isactive as integer,",
-						"          start_date as date,",
-						"          end_date as date",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> source2",
-						"source1 derive({Hash input} = md5(id,name,dept,startdate)) ~> HashInput",
-						"source2 derive({Hash output} = md5(id,name,dept,start_date)) ~> HashOutput",
-						"HashInput, HashOutput exists({Hash input} == {Hash output},",
-						"     negate:true,",
-						"     broadcast: 'auto')~> exists1",
-						"exists1 derive(isactive = 1,",
-						"          enddate = toDate(9999-12-31),",
-						"          startdate = toDate(startdate,'dd-MM-yyyy')) ~> derivedColumn1",
-						"derivedColumn1 select(mapColumn(",
-						"          id,",
-						"          name,",
-						"          dept,",
-						"          startdate,",
-						"          isactive,",
-						"          enddate",
-						"     ),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select1",
-						"HashOutput, HashInput exists(source2@id == toInteger((source1@id))",
-						"     && source2@name == source1@name,",
-						"     negate:false,",
-						"     broadcast: 'auto')~> exists2",
-						"exists2 derive(end_date = toDate(currentUTC()),",
-						"          isactive = 0) ~> enddate",
-						"enddate select(mapColumn(",
-						"          id,",
-						"          name,",
-						"          dept,",
-						"          isactive,",
-						"          start_date,",
-						"          end_date",
-						"     ),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select2",
-						"select2 alterRow(updateIf(true())) ~> alterRow1",
-						"select1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          id as integer,",
-						"          name as string,",
-						"          dept as string,",
-						"          isactive as integer,",
-						"          start_date as date,",
-						"          end_date as date",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     mapColumn(",
-						"          id,",
-						"          name,",
-						"          dept,",
-						"          isactive,",
-						"          start_date = startdate,",
-						"          end_date = enddate",
-						"     )) ~> sink1",
-						"alterRow1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          id as integer,",
-						"          name as string,",
-						"          dept as string,",
-						"          isactive as integer,",
-						"          start_date as date,",
-						"          end_date as date",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:true,",
-						"     updateable:false,",
-						"     upsertable:false,",
-						"     format: 'table',",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
-					]
-				}
+						"inputs": [
+							{
+								"referenceName": "DelimitedText3",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "Json1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-06-09T07:30:06Z"
 			},
 			"dependsOn": []
 		},
@@ -375,6 +267,708 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Scd_Type2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_Source",
+								"type": "DatasetReference"
+							},
+							"name": "SCDsource"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_Target",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DelimitedText1",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "DelimitedText2",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SourceHash"
+						},
+						{
+							"name": "TargetHash"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "Isactive"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "exists2"
+						},
+						{
+							"name": "exists3"
+						},
+						{
+							"name": "isinactive"
+						},
+						{
+							"name": "alterRow1"
+						},
+						{
+							"name": "select2"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          User_ID as string,",
+						"          Subscripton as string,",
+						"          Price as string,",
+						"          Location as string,",
+						"          Pincode as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> SCDsource",
+						"source(output(",
+						"          User_ID as string,",
+						"          Subscripton as string,",
+						"          Price as string,",
+						"          Location as string,",
+						"          Pincode as string,",
+						"          Is_Active as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"SCDsource derive(Hash = md5(User_ID,Subscripton,Price,Location,Pincode)) ~> SourceHash",
+						"source1 derive(Hash = md5(User_ID,Subscripton,Price,Location,Pincode)) ~> TargetHash",
+						"SourceHash, TargetHash exists(SourceHash@Hash == TargetHash@Hash,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 derive(Is_active = 1) ~> Isactive",
+						"Isactive select(mapColumn(",
+						"          User_ID,",
+						"          Subscripton,",
+						"          Price,",
+						"          Location,",
+						"          Pincode,",
+						"          Is_active",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"TargetHash, SourceHash exists(source1@User_ID == SCDsource@User_ID,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> exists2",
+						"exists2, SourceHash exists(TargetHash@Hash == SourceHash@Hash,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists3",
+						"exists3 derive(Is_Active = 0) ~> isinactive",
+						"isinactive alterRow(updateIf(true())) ~> alterRow1",
+						"alterRow1 select(mapColumn(",
+						"          User_ID,",
+						"          Subscripton,",
+						"          Price,",
+						"          Location,",
+						"          Pincode,",
+						"          Is_Active",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          User_ID as string,",
+						"          Subscripton as string,",
+						"          Price as string,",
+						"          Location as string,",
+						"          Pincode as string,",
+						"          Is_Active as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink1",
+						"select2 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          User_ID as string,",
+						"          Subscripton as string,",
+						"          Price as string,",
+						"          Location as string,",
+						"          Pincode as string,",
+						"          Is_Active as string",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink2"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Scd_Type2_copy1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_Source",
+								"type": "DatasetReference"
+							},
+							"name": "SCDsource"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_Amazon_Table",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DS_AMAZON2",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_Amazon_Table",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "SourceHash"
+						},
+						{
+							"name": "TargetHash"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "Isactive"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "exists2"
+						},
+						{
+							"name": "exists3"
+						},
+						{
+							"name": "isinactive"
+						},
+						{
+							"name": "alterRow1"
+						},
+						{
+							"name": "select2"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          User_ID as integer,",
+						"          Subscripton as string,",
+						"          Price as integer,",
+						"          Location as string,",
+						"          Pincode as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> SCDsource",
+						"source(output(",
+						"          User_ID as integer,",
+						"          Subscripton as string,",
+						"          Price as integer,",
+						"          Location as string,",
+						"          Pincode as integer,",
+						"          IS_ACTIVE as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source1",
+						"SCDsource derive(Hash = md5(User_ID,Subscripton,Price,Location,Pincode)) ~> SourceHash",
+						"source1 derive(Hash = md5(User_ID,Subscripton,Price,Location,Pincode)) ~> TargetHash",
+						"SourceHash, TargetHash exists(SourceHash@Hash == TargetHash@Hash,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 derive(Is_active = 1) ~> Isactive",
+						"Isactive select(mapColumn(",
+						"          User_ID,",
+						"          Subscripton,",
+						"          Price,",
+						"          Location,",
+						"          Pincode,",
+						"          Is_active",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"TargetHash, SourceHash exists(toInteger(source1@User_ID)== toInteger(SCDsource@User_ID),",
+						"     negate:false,",
+						"     broadcast: 'auto')~> exists2",
+						"exists2, SourceHash exists(TargetHash@Hash == SourceHash@Hash,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists3",
+						"exists3 derive(Is_Active = 0) ~> isinactive",
+						"isinactive alterRow(updateIf(true())) ~> alterRow1",
+						"alterRow1 select(mapColumn(",
+						"          User_ID,",
+						"          Subscripton,",
+						"          Price,",
+						"          Location,",
+						"          Pincode,",
+						"          Is_Active = isinactive@Is_Active",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          User_ID as integer,",
+						"          Subscripton as string,",
+						"          Price as integer,",
+						"          Location as string,",
+						"          Pincode as integer,",
+						"          IS_ACTIVE as integer",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          User_ID,",
+						"          Subscripton,",
+						"          Price,",
+						"          Location,",
+						"          Pincode,",
+						"          IS_ACTIVE = Is_active",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink1",
+						"select2 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          User_ID as integer,",
+						"          Subscripton as string,",
+						"          Price as integer,",
+						"          Location as string,",
+						"          Pincode as integer,",
+						"          IS_ACTIVE as integer",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          User_ID,",
+						"          Subscripton,",
+						"          Price,",
+						"          Location,",
+						"          Pincode,",
+						"          IS_ACTIVE = Is_Active",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink2"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "source2"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "inputhash"
+						},
+						{
+							"name": "outputhash"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "exists2"
+						},
+						{
+							"name": "derivedColumn2"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "select2"
+						},
+						{
+							"name": "alterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          id as string,",
+						"          name as string,",
+						"          dept as string,",
+						"          startdate as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source(output(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source2",
+						"source1 derive(inputhash = md5(name,dept)) ~> inputhash",
+						"source2 derive(outputhash = md5(name,dept)) ~> outputhash",
+						"inputhash, outputhash exists(inputhash == outputhash,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 derive(isactve = 1,",
+						"          startdate = toDate(startdate,'dd-MM-yyyy'),",
+						"          end_date = 9999) ~> derivedColumn1",
+						"outputhash, inputhash exists(source2@id == toInteger(source1@id)",
+						"     && source2@name == source1@name",
+						"     && source2@dept == source1@dept,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> exists2",
+						"exists2 derive(isactive = 0,",
+						"          end_date = toDate(currentUTC())) ~> derivedColumn2",
+						"derivedColumn1 select(mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          startdate,",
+						"          isactve,",
+						"          end_date",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"derivedColumn2 select(mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive,",
+						"          start_date,",
+						"          end_date",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
+						"select2 alterRow(updateIf(true())) ~> alterRow1",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive = isactve,",
+						"          start_date = startdate,",
+						"          end_date",
+						"     )) ~> sink1",
+						"alterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive,",
+						"          start_date,",
+						"          end_date",
+						"     )) ~> sink2"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/emp_scd2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "source2"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_sink_scd_employee",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						}
+					],
+					"transformations": [
+						{
+							"name": "HashInput"
+						},
+						{
+							"name": "HashOutput"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "exists2"
+						},
+						{
+							"name": "enddate"
+						},
+						{
+							"name": "select2"
+						},
+						{
+							"name": "alterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          id as string,",
+						"          name as string,",
+						"          dept as string,",
+						"          startdate as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source(output(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source2",
+						"source1 derive({Hash input} = md5(id,name,dept,startdate)) ~> HashInput",
+						"source2 derive({Hash output} = md5(id,name,dept,start_date)) ~> HashOutput",
+						"HashInput, HashOutput exists({Hash input} == {Hash output},",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 derive(isactive = 1,",
+						"          enddate = toDate(9999-12-31),",
+						"          startdate = toDate(startdate,'dd-MM-yyyy')) ~> derivedColumn1",
+						"derivedColumn1 select(mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          startdate,",
+						"          isactive,",
+						"          enddate",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"HashOutput, HashInput exists(source2@id == toInteger((source1@id))",
+						"     && source2@name == source1@name,",
+						"     negate:false,",
+						"     broadcast: 'auto')~> exists2",
+						"exists2 derive(end_date = toDate(currentUTC()),",
+						"          isactive = 0) ~> enddate",
+						"enddate select(mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive,",
+						"          start_date,",
+						"          end_date",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select2",
+						"select2 alterRow(updateIf(true())) ~> alterRow1",
+						"select1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          id,",
+						"          name,",
+						"          dept,",
+						"          isactive,",
+						"          start_date = startdate,",
+						"          end_date = enddate",
+						"     )) ~> sink1",
+						"alterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          id as integer,",
+						"          name as string,",
+						"          dept as string,",
+						"          isactive as integer,",
+						"          start_date as date,",
+						"          end_date as date",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
+					]
+				}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/SCD_Practice')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -419,7 +1013,9 @@
 				"annotations": [],
 				"lastPublishTime": "2025-06-09T03:56:04Z"
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Scd_Type2')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
@@ -513,7 +1109,9 @@
 				},
 				"annotations": []
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow1')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/event based')]",
@@ -541,7 +1139,57 @@
 					]
 				}
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/triggers_demo')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SCD_TYPETO_FULLOUTPUT')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Scd_Type2_copy1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Scd_Type2_copy1",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SCDsource": {},
+									"source1": {},
+									"sink1": {},
+									"sink2": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Scd_Type2_copy1')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/trigger2')]",
