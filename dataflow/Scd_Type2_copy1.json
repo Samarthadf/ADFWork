@@ -105,7 +105,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> select1",
-				"TargetHash, SourceHash exists(source1@User_ID == SCDsource@User_ID,",
+				"TargetHash, SourceHash exists(toInteger(source1@User_ID)== toInteger(SCDsource@User_ID),",
 				"     negate:false,",
 				"     broadcast: 'auto')~> exists2",
 				"exists2, SourceHash exists(TargetHash@Hash == SourceHash@Hash,",
